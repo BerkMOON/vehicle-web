@@ -9,7 +9,7 @@ SSH_KEY="/Users/berk/Downloads/nginx_admin.pem"
 
 # 打包项目
 echo "开始打包..."
-npm run build
+npm run build:h5
 
 # 创建远程目录和临时目录
 echo "创建目录..."

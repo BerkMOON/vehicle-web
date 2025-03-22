@@ -1,5 +1,6 @@
 import path from "path"
 import HtmlWebpackPlugin from 'html-webpack-plugin'
+import TerserPlugin from 'terser-webpack-plugin' 
 
 const config = {
   projectName: 'vehicle-web',
@@ -115,12 +116,13 @@ const config = {
       })
 
       chain.plugins.delete('html')
+      chain.plugins.delete('index-html')
 
       Object.keys(entries).forEach(entry => {
         chain.plugin(`html-${entry}`).use(HtmlWebpackPlugin, [{
           filename: `${entry}.html`,
           template: path.join(process.cwd(), 'src/index.html'),
-          chunks: ['vendors', 'common', entry],
+          chunks: ['taro-vendors', 'nut-vendors', 'react-vendors', 'vendors', 'common', entry],
           inject: true,
           templateParameters: {
             TARO_PLATFORM: 'h5'
@@ -128,24 +130,70 @@ const config = {
         }])
       })
 
-      // 修改分包配置
+      // 先定义 DefinePlugin
+      chain.plugin('define')
+        .use(require('webpack').DefinePlugin, [{
+          'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
+        }])
+
+      // 优化分包配置
       chain.optimization.splitChunks({
         chunks: 'all',
+        maxInitialRequests: 5,
+        minSize: 20000,
+        maxSize: 100000,
         cacheGroups: {
+          taroVendors: {
+            name: 'taro-vendors',
+            test: /[\\/]node_modules[\\/](@tarojs)/,
+            priority: 20,
+            chunks: 'all'
+          },
+          nutVendors: {
+            name: 'nut-vendors',
+            test: /[\\/]node_modules[\\/](@nutui)/,
+            priority: 15,
+            chunks: 'all'
+          },
+          reactVendors: {
+            name: 'react-vendors',
+            test: /[\\/]node_modules[\\/](react|react-dom)/,
+            priority: 10,
+            chunks: 'all'
+          },
           vendors: {
             name: 'vendors',
             test: /[\\/]node_modules[\\/]/,
-            priority: 10,
-            chunks: 'initial'
+            priority: 5,
+            chunks: 'all'
           },
           common: {
             name: 'common',
             minChunks: 2,
-            priority: -20,
+            priority: 0,
             reuseExistingChunk: true
           }
         }
       })
+
+      // 添加压缩配置
+      chain.optimization.minimize(true)
+      chain.optimization.usedExports(true)
+
+      // 添加 terser 配置
+      chain.optimization.minimizer('terser')
+        .use(TerserPlugin, [{
+          terserOptions: {
+            compress: {
+              drop_console: process.env.NODE_ENV === 'production',
+              drop_debugger: true
+            },
+            format: {
+              comments: false
+            }
+          },
+          extractComments: false
+        }])
     }
   }
 }
