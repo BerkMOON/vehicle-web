@@ -1,21 +1,23 @@
 import { View, Text, Icon } from '@tarojs/components'
 import { Button, Empty, Form, Input } from "@nutui/nutui-react-taro"
+import { Eye, Marshalling } from '@nutui/icons-react-taro'
 import { getCodeFromUrl } from '@/utils/utils'
 import { subscribeNotify } from '@/api/business'
 import Taro from '@tarojs/taro'
-import styles from  './bind.module.scss'
+import styles from './bind.module.scss'
 import { useState } from 'react'
 
 function Index() {
   const code = getCodeFromUrl()
   const [bindStatus, setBindStatus] = useState(false);
+  const [inputType, setInputType] = useState<'text' | 'password'>('password')
 
   const submitSucceed = async (obj: any) => {
     try {
       const { data: { response_status } } = await subscribeNotify({
         open_code: code,
         phone: obj.tel,
-        store_code: obj.storeCode
+        password: obj.password
       })
       if (response_status.code === 200) {
         Taro.showToast({
@@ -68,12 +70,34 @@ function Index() {
               </>
             }
           >
-            <Form.Item label='联系电话' name="tel" rules={[{ required: true, message: '请输入联系电话' }]}>
-              <Input placeholder='请填写联系电话' type="number" />
-            </Form.Item>
-            <Form.Item label='邀请码' name="storeCode" rules={[{ required: true, message: '请填写邀请码' }]}>
-              <Input placeholder='请填写邀请码' type="text" />
-            </Form.Item>
+            <View className={styles['form-password']}>
+              <Form.Item label='账号' name="tel" rules={[{ required: true, message: '请输入联系电话' }]}>
+                <Input placeholder='请填写账号，使用手机号即可' type="number" />
+              </Form.Item>
+            </View>
+            <View className={styles['form-password']}>
+              <Form.Item
+                label='密码'
+                name='password'
+                required
+              >
+                <Input
+                  type={inputType}
+                  placeholder='请输入密码'
+                />
+              </Form.Item>
+              <div
+                onClick={() =>
+                  setInputType(inputType === 'text' ? 'password' : 'text')
+                }
+              >
+                {inputType === 'text' ? (
+                  <Eye />
+                ) : (
+                  <Marshalling />
+                )}
+              </div>
+            </View>
           </Form>
         </>
       }

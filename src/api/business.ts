@@ -4,7 +4,7 @@ import { ResponseInfoType } from 'types/common';
 export interface NotifySubscribeParams {
   open_code: string;
   phone: string;
-  store_code: string;
+  password: string;
 }
 
 /**
